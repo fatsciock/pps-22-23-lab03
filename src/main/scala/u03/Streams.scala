@@ -1,5 +1,6 @@
 package u03
 
+
 object Streams extends App :
 
   import Lists.*
@@ -34,6 +35,13 @@ object Streams extends App :
       case (Cons(head, tail), n) if n > 0 => cons(head(), take(tail())(n - 1))
       case _ => Empty()
 
+    def drop[A](stream: Stream[A])(n: Int): Stream[A] = (stream, n) match
+      case (Cons(_, t), n) if n > 0 => drop(t())(n-1)
+      case (Cons(_, _), n) if n == 0 => stream
+      case _ => Empty()
+
+    def constant[A](el: A): Stream[A] = iterate(el)(el => el)
+
     def iterate[A](init: => A)(next: A => A): Stream[A] =
       cons(init, iterate(next(init))(next))
 
@@ -44,7 +52,23 @@ object Streams extends App :
   str = Stream.map(str)(_ + 1) // {1,2,3,4,..}
   str = Stream.filter(str)(x => (x < 3 || x > 20)) // {1,2,21,22,..}
   str = Stream.take(str)(10) // {1,2,21,22,..,28}
-  println(Stream.toList(str)) // [1,2,21,22,..,28]
+  //println(Stream.toList(str)) // [1,2,21,22,..,28]
 
   val corec: Stream[Int] = Stream.cons(1, corec) // {1,1,1,..}
-  println(Stream.toList(Stream.take(corec)(10))) // [1,1,..,1]
+  //println(Stream.toList(Stream.take(corec)(10))) // [1,1,..,1]
+
+  val s = Stream.take(Stream.iterate(0)(_ + 1))(10)
+  println(Stream.toList(Stream.drop(s)(6)))
+
+  println(Stream.toList(Stream.take(Stream.constant("x"))(5)))
+
+  val fibs: Stream[Int] = {
+    def fibonacci(n: Int): Int = n match {
+      case 0 | 1 => n
+      case _ => fibonacci(n - 1) + fibonacci(n - 2)
+    }
+
+    Stream.map(Stream.iterate(0)(_ + 1))(fibonacci)
+  }
+
+  println(Stream.toList(Stream.take(fibs)(8)))
